@@ -1,0 +1,2 @@
+-c de.uni_passau.fim.se2.sa.examples.PublicFunctional -m "divZeroCall:()I"
+Line 124: ERROR: Division by Zero detected
