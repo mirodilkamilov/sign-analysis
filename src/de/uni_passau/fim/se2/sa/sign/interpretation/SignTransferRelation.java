@@ -21,8 +21,36 @@ public class SignTransferRelation implements TransferRelation {
   public SignValue evaluate(final Operation pOperation, final SignValue pValue) {
     Preconditions.checkState(pOperation == Operation.NEG);
     Preconditions.checkNotNull(pValue);
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    switch (pValue) {
+      case BOTTOM -> {
+        return SignValue.BOTTOM;
+      }
+      case MINUS -> {
+        return SignValue.PLUS;
+      }
+      case ZERO -> {
+        return SignValue.ZERO;
+      }
+      case ZERO_MINUS -> {
+        return SignValue.ZERO_PLUS;
+      }
+      case PLUS -> {
+        return SignValue.MINUS;
+      }
+      case PLUS_MINUS -> {
+        return SignValue.PLUS_MINUS;
+      }
+      case ZERO_PLUS -> {
+        return SignValue.ZERO_MINUS;
+      }
+      case TOP -> {
+        return SignValue.TOP;
+      }
+      case UNINITIALIZED_VALUE -> {
+        return SignValue.UNINITIALIZED_VALUE;
+      }
+      default -> throw new IllegalArgumentException("Unexpected sign value: " + pValue);
+    }
   }
 
   @Override
