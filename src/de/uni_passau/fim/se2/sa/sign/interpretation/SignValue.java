@@ -70,4 +70,14 @@ public enum SignValue implements Value {
     // TODO Implement me
     throw new UnsupportedOperationException("Implement me");
   }
+
+  public static SignValue getSignValue(int num) {
+    if (num == 0) {
+      return SignValue.ZERO;
+    } else if (num > 0) {
+      return SignValue.PLUS;
+    } else {
+      return SignValue.MINUS;
+    }
+  }
 }
