@@ -130,6 +130,8 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   /** {@inheritDoc} */
   @Override
   public SignValue merge(final SignValue pValue1, final SignValue pValue2) {
-    return pValue1;
+    if (pValue1 == pValue2)
+      return pValue1;
+    return pValue1.join(pValue2);
   }
 }
