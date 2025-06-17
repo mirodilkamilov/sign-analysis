@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static de.uni_passau.fim.se2.sa.sign.interpretation.SignTransferRelation.getOperationFromOpcode;
-import static de.uni_passau.fim.se2.sa.sign.interpretation.TransferRelation.*;
+import static de.uni_passau.fim.se2.sa.sign.interpretation.TransferRelation.Operation;
 
 public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
 
@@ -67,12 +67,13 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
       }
       case Opcodes.BIPUSH,
            Opcodes.SIPUSH -> {
-        return SignValue.getSignValue(((IntInsnNode) pInstruction).operand);
+        int num = ((IntInsnNode) pInstruction).operand;
+        return new SignTransferRelation().evaluate(num);
       }
       case Opcodes.LDC -> {
         Object cst = ((LdcInsnNode) pInstruction).cst;
         if (cst instanceof Integer intNum) {
-          return SignValue.getSignValue(intNum);
+          return new SignTransferRelation().evaluate(intNum);
         }
         return SignValue.TOP;
       }
@@ -90,10 +91,8 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   @Override
   public SignValue unaryOperation(final AbstractInsnNode pInstruction, final SignValue pValue)
       throws AnalyzerException {
-    if (Opcodes.INEG == pInstruction.getOpcode()) {
-      return pValue;
-    }
-    return pValue;
+    Operation operation = getOperationFromOpcode(pInstruction.getOpcode());
+    return new SignTransferRelation().evaluate(operation, pValue);
   }
 
   /** {@inheritDoc} */

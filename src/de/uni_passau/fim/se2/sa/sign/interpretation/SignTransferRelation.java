@@ -8,8 +8,13 @@ public class SignTransferRelation implements TransferRelation {
 
   @Override
   public SignValue evaluate(final int pValue) {
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    if (pValue == 0) {
+      return SignValue.ZERO;
+    } else if (pValue > 0) {
+      return SignValue.PLUS;
+    } else {
+      return SignValue.MINUS;
+    }
   }
 
   @Override
