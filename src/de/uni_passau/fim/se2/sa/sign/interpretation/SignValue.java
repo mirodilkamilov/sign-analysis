@@ -3,6 +3,8 @@ package de.uni_passau.fim.se2.sa.sign.interpretation;
 import com.google.common.base.Preconditions;
 import org.objectweb.asm.tree.analysis.Value;
 
+import java.util.Set;
+
 /** An enum representing the possible abstract values of the sign analysis. */
 public enum SignValue implements Value {
   // Important! This implementation is kind of fragile. Don't change the order of enum values!
@@ -73,5 +75,31 @@ public enum SignValue implements Value {
 
   public static boolean isMaybeNegative(final SignValue pValue) {
     return pValue == SignValue.MINUS || pValue == ZERO_MINUS || pValue == PLUS_MINUS || pValue == TOP;
+  }
+
+  public static Set<Sign> toSignSet(SignValue value) {
+    return switch (value) {
+      case BOTTOM -> throw new IllegalStateException("BOTTOM value not allowed");
+      case MINUS -> Set.of(Sign.MINUS);
+      case ZERO -> Set.of(Sign.ZERO);
+      case ZERO_MINUS -> Set.of(Sign.ZERO, Sign.MINUS);
+      case PLUS -> Set.of(Sign.PLUS);
+      case PLUS_MINUS -> Set.of(Sign.PLUS, Sign.MINUS);
+      case ZERO_PLUS -> Set.of(Sign.ZERO, Sign.PLUS);
+      case TOP -> Set.of(Sign.PLUS, Sign.MINUS, Sign.ZERO);
+      case UNINITIALIZED_VALUE -> throw new IllegalStateException("Uninitialized value not allowed.");
+    };
+  }
+
+  public static SignValue fromSignSet(Set<Sign> signs) {
+    if (signs.isEmpty()) return SignValue.BOTTOM;
+    if (signs.equals(Set.of(Sign.MINUS))) return SignValue.MINUS;
+    if (signs.equals(Set.of(Sign.ZERO))) return SignValue.ZERO;
+    if (signs.equals(Set.of(Sign.ZERO, Sign.MINUS))) return SignValue.ZERO_MINUS;
+    if (signs.equals(Set.of(Sign.PLUS))) return SignValue.PLUS;
+    if (signs.equals(Set.of(Sign.PLUS, Sign.MINUS))) return SignValue.PLUS_MINUS;
+    if (signs.equals(Set.of(Sign.ZERO, Sign.PLUS))) return SignValue.ZERO_PLUS;
+    if (signs.containsAll(Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS))) return SignValue.TOP;
+    throw new IllegalStateException("Unknown sign set: " + signs);
   }
 }

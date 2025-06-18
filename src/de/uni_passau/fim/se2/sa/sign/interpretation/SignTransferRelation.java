@@ -63,29 +63,10 @@ public class SignTransferRelation implements TransferRelation {
     Preconditions.checkNotNull(pLHS);
     Preconditions.checkNotNull(pRHS);
 
-    switch (pOperation) {
-      case ADD -> {
-        if (pLHS == SignValue.BOTTOM || pRHS == SignValue.BOTTOM) {
-          return SignValue.BOTTOM;
-        }
-        if (pLHS == SignValue.UNINITIALIZED_VALUE || pRHS == SignValue.UNINITIALIZED_VALUE) {
-          return SignValue.UNINITIALIZED_VALUE;
-        }
-
-        // Return the type if both operands are the same, unless they are both PLUS_MINUS (then it's TOP)
-        if (pLHS == pRHS && !(pLHS == SignValue.PLUS_MINUS)) {
-          return pLHS;
-        }
-        if (pLHS == SignValue.ZERO) {
-          return pRHS;
-        }
-        if (pRHS == SignValue.ZERO) {
-          return pLHS;
-        }
-        return SignValue.TOP;
-      }
+    return switch (pOperation) {
+      case ADD -> Sign.evaluateAdd(pLHS, pRHS);
       default -> throw new RuntimeException("Rest not implemented yet");
-    }
+    };
   }
 
   public static Operation getOperationFromOpcode(int opcode) {
