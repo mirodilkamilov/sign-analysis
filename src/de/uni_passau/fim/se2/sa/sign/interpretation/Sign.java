@@ -11,7 +11,7 @@ public enum Sign {
       return SignValue.BOTTOM;
     }
     if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
-      return SignValue.UNINITIALIZED_VALUE;
+      return SignValue.TOP;
     }
 
     Set<Sign> lhsSigns = SignValue.toSignSet(lhs);
