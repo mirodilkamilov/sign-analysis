@@ -7,11 +7,11 @@ public enum Sign {
   MINUS, ZERO, PLUS, TOP;
 
   public static SignValue evaluateAdd(SignValue lhs, SignValue rhs) {
-    if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
-      return SignValue.UNINITIALIZED_VALUE;
-    }
     if (lhs == SignValue.BOTTOM || rhs == SignValue.BOTTOM) {
       return SignValue.BOTTOM;
+    }
+    if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
+      return SignValue.UNINITIALIZED_VALUE;
     }
 
     Set<Sign> lhsSigns = SignValue.toSignSet(lhs);
