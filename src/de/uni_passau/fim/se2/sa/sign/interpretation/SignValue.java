@@ -72,6 +72,6 @@ public enum SignValue implements Value {
   }
 
   public static boolean isMaybeNegative(final SignValue pValue) {
-    return pValue == SignValue.MINUS | pValue == ZERO_MINUS || pValue == PLUS_MINUS || pValue == TOP;
+    return pValue == SignValue.MINUS || pValue == ZERO_MINUS || pValue == PLUS_MINUS || pValue == TOP;
   }
 }

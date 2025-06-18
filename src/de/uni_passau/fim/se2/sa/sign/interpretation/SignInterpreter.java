@@ -117,7 +117,7 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   @Override
   public SignValue naryOperation(
       final AbstractInsnNode pInstruction, final List<? extends SignValue> pValues) {
-    return pValues.getFirst();
+    return pValues.getFirst(); // TODO: Implement
   }
 
   /** {@inheritDoc} */
