@@ -100,6 +100,7 @@ public enum SignValue implements Value {
     if (signs.equals(Set.of(Sign.PLUS, Sign.MINUS))) return SignValue.PLUS_MINUS;
     if (signs.equals(Set.of(Sign.ZERO, Sign.PLUS))) return SignValue.ZERO_PLUS;
     if (signs.containsAll(Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS))) return SignValue.TOP;
+    if (signs.equals(Set.of(Sign.TOP))) return SignValue.TOP;
     throw new IllegalStateException("Unknown sign set: " + signs);
   }
 }
