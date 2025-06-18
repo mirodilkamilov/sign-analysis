@@ -1,7 +1,6 @@
 package de.uni_passau.fim.se2.sa.sign.interpretation;
 
 import com.google.common.base.Preconditions;
-import de.uni_passau.fim.se2.sa.sign.lattice.SignLattice;
 import org.objectweb.asm.Opcodes;
 
 public class SignTransferRelation implements TransferRelation {
@@ -66,11 +65,24 @@ public class SignTransferRelation implements TransferRelation {
 
     switch (pOperation) {
       case ADD -> {
-        if (pLHS == pRHS) {
-          return pLHS;
-        } else {
-          return new SignLattice().join(pLHS, pRHS);
+        if (pLHS == SignValue.BOTTOM || pRHS == SignValue.BOTTOM) {
+          return SignValue.BOTTOM;
         }
+        if (pLHS == SignValue.UNINITIALIZED_VALUE || pRHS == SignValue.UNINITIALIZED_VALUE) {
+          return SignValue.UNINITIALIZED_VALUE;
+        }
+
+        // Return the type if both operands are the same, unless they are both PLUS_MINUS (then it's TOP)
+        if (pLHS == pRHS && !(pLHS == SignValue.PLUS_MINUS)) {
+          return pLHS;
+        }
+        if (pLHS == SignValue.ZERO) {
+          return pRHS;
+        }
+        if (pRHS == SignValue.ZERO) {
+          return pLHS;
+        }
+        return SignValue.TOP;
       }
       default -> throw new RuntimeException("Rest not implemented yet");
     }
