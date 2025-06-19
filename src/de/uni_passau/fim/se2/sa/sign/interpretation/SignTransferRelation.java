@@ -73,6 +73,9 @@ public class SignTransferRelation implements TransferRelation {
       if (pOperation == Operation.ADD || pOperation == Operation.SUB) {
         return SignValue.TOP;
       }
+      if (pLHS == pRHS) {
+        return SignValue.TOP;
+      }
       if (pOperation == Operation.MUL && (pLHS == SignValue.ZERO || pRHS == SignValue.ZERO)) {
         return SignValue.ZERO;
       }
