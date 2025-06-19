@@ -78,6 +78,7 @@ public class SignTransferRelation implements TransferRelation {
       for (Sign rSign : pRHS.getSigns()){
         Set<Sign> partialResult = switch (pOperation) {
           case ADD -> Sign.evaluateAdd(lSign, rSign);
+          case SUB -> Sign.evaluateSubtract(lSign, rSign);
           default -> throw new RuntimeException("Rest not implemented yet");
         };
         resultSet.addAll(partialResult);
