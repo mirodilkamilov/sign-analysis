@@ -1,45 +1,23 @@
 package de.uni_passau.fim.se2.sa.sign.interpretation;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public enum Sign {
-  MINUS, ZERO, PLUS, TOP;
+  MINUS, ZERO, PLUS;
 
-  public static SignValue evaluateAdd(SignValue lhs, SignValue rhs) {
-    if (lhs == SignValue.BOTTOM || rhs == SignValue.BOTTOM) {
-      return SignValue.BOTTOM;
-    }
-    if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
-      return SignValue.TOP;
-    }
-
-    Set<Sign> lhsSigns = SignValue.toSignSet(lhs);
-    Set<Sign> rhsSigns = SignValue.toSignSet(rhs);
-    Set<Sign> resultSigns = new HashSet<>();
-
-    for (Sign l : lhsSigns) {
-      for (Sign r : rhsSigns) {
-        Sign result = addPair(l, r);
-        resultSigns.addAll(SignValue.toSignSet(SignValue.fromSignSet(Set.of(result))));
-      }
-    }
-
-    return SignValue.fromSignSet(resultSigns);
-  }
-
-  private static Sign addPair(Sign a, Sign b) {
-    return switch (a) {
-      case MINUS -> switch (b) {
-        case MINUS, ZERO -> Sign.MINUS;
-        case PLUS, TOP -> Sign.TOP;
+  // Set implementation of addition is inspired by LLM
+  // Please refer to code_queries.txt
+  public static Set<Sign> evaluateAdd(Sign lhs, Sign rhs) {
+    return switch (lhs) {
+      case MINUS -> switch (rhs) {
+        case MINUS, ZERO -> Set.of(Sign.MINUS);
+        case PLUS -> Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS);
       };
-      case ZERO -> b;
-      case PLUS -> switch (b) {
-        case MINUS, TOP -> Sign.TOP;
-        case ZERO, PLUS -> Sign.PLUS;
+      case ZERO -> Set.of(rhs);
+      case PLUS -> switch (rhs) {
+        case MINUS -> Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS);
+        case ZERO, PLUS -> Set.of(Sign.PLUS);
       };
-      case TOP -> Sign.TOP;
     };
   }
 }

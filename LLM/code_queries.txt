@@ -103,3 +103,281 @@ A: You're on the right track with your `SignValue` enum — the comments hint th
    Let me know if you also want help implementing the lattice **meet**, arithmetic operations, or abstract transfer functions for bytecode instructions.
 
 
+Q: Now, I tried to implement addition operation in my SignTransferRelation class, it seems it's not the efficient and robust way. Also I have 3 more operation to take care. What is better aproach than manual multiple if checks?
+
+   @Override
+     public SignValue evaluate(
+         final Operation pOperation, final SignValue pLHS, final SignValue pRHS) {
+       Preconditions.checkState(
+           pOperation == Operation.ADD
+               || pOperation == Operation.SUB
+               || pOperation == Operation.MUL
+               || pOperation == Operation.DIV);
+       Preconditions.checkNotNull(pLHS);
+       Preconditions.checkNotNull(pRHS);
+
+       switch (pOperation) {
+         case ADD -> {
+           if (pLHS == SignValue.BOTTOM || pRHS == SignValue.BOTTOM) {
+             return SignValue.BOTTOM;
+           }
+           if (pLHS == SignValue.UNINITIALIZED_VALUE || pRHS == SignValue.UNINITIALIZED_VALUE) {
+             return SignValue.UNINITIALIZED_VALUE;
+           }
+
+           // Return the type if both operands are the same, unless they are both PLUS_MINUS (then it's TOP)
+           if (pLHS == pRHS && !(pLHS == SignValue.PLUS_MINUS)) {
+             return pLHS;
+           }
+           if (pLHS == SignValue.ZERO) {
+             return pRHS;
+           }
+           if (pRHS == SignValue.ZERO) {
+             return pLHS;
+           }
+           return SignValue.TOP;
+         }
+         default -> throw new RuntimeException("Rest not implemented yet");
+       }
+     }
+
+
+A: You're right — implementing abstract operations like `ADD`, `SUB`, `MUL`, and `DIV` using long chains of `if`/`switch` is **not scalable or robust**, especially given the **richness of your `SignValue` lattice**.
+
+   ---
+
+   ### ✅ Better Approach: **Operation Lookup Tables**
+
+   A **lookup table (matrix)** is the standard and efficient way to implement operations in **abstract interpretation**. Here's how:
+
+   ---
+
+   ### 🔁 1. Define a Lookup Matrix Per Operation
+
+   Each `SignValue` can be represented by an **index**. Since you already mention not to change the enum order, we can use `ordinal()` to index into a 2D array.
+
+   For example, for `ADD`:
+
+   ```java
+   private static final SignValue[][] ADD_TABLE = new SignValue[9][9];
+
+   // Static block to initialize the table
+   static {
+     // Fill the table based on the lattice and rules for addition
+     // Examples:
+     ADD_TABLE[SignValue.MINUS.ordinal()][SignValue.MINUS.ordinal()] = SignValue.MINUS;
+     ADD_TABLE[SignValue.ZERO.ordinal()][SignValue.MINUS.ordinal()] = SignValue.MINUS;
+     ADD_TABLE[SignValue.PLUS.ordinal()][SignValue.MINUS.ordinal()] = SignValue.TOP;
+     // ... complete this for all 9x9 combinations (can use helper for symmetry)
+   }
+   ```
+
+   You would similarly create `SUB_TABLE`, `MUL_TABLE`, and `DIV_TABLE`.
+
+   ---
+
+   ### 🔁 2. Evaluate Using Table Lookup
+
+   ```java
+   @Override
+   public SignValue evaluate(Operation op, SignValue lhs, SignValue rhs) {
+     Preconditions.checkNotNull(lhs);
+     Preconditions.checkNotNull(rhs);
+
+     if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
+       return SignValue.UNINITIALIZED_VALUE;
+     }
+
+     if (lhs == SignValue.BOTTOM || rhs == SignValue.BOTTOM) {
+       return SignValue.BOTTOM;
+     }
+
+     return switch (op) {
+       case ADD -> ADD_TABLE[lhs.ordinal()][rhs.ordinal()];
+       case SUB -> SUB_TABLE[lhs.ordinal()][rhs.ordinal()];
+       case MUL -> MUL_TABLE[lhs.ordinal()][rhs.ordinal()];
+       case DIV -> DIV_TABLE[lhs.ordinal()][rhs.ordinal()];
+       default -> throw new IllegalStateException("Unexpected value: " + op);
+     };
+   }
+   ```
+
+   ---
+
+   ### 🛠 3. Optionally: Use EnumMap or Functional Encoding
+
+   If you find 2D arrays too verbose, another approach is to encode operations via `EnumMap<Operation, BiFunction<SignValue, SignValue, SignValue>>`, but the table-based approach is more **performant and clearer** for this finite domain.
+
+   ---
+
+   ### ✨ Benefits of the Lookup Table Approach
+
+   | Feature                  | Lookup Table | Manual `if` |
+   | ------------------------ | ------------ | ----------- |
+   | Fast Lookup              | ✅ O(1)       | ❌ O(n²)     |
+   | Easy to Validate         | ✅            | ❌           |
+   | Easy to Extend/Debug     | ✅            | ❌           |
+   | Encodes Domain Semantics | ✅            | ❌           |
+
+   ---
+
+   ### 🔚 TL;DR
+
+   **Best Practice:**
+
+   > Represent each abstract operation as a 2D `SignValue[][]` table indexed by `lhs.ordinal()` and `rhs.ordinal()`, and return results in `evaluate()` via lookup.
+
+   ---
+
+   Would you like me to generate the full `ADD_TABLE` or a helper method to populate it based on the lattice relationships?
+
+
+
+Q: How about with Sets? Making subset of my SignValue with values, like MINUS, ZERO, PLUS, TOP
+
+A: Using **sets to model sign information** is a **very elegant and semantically rich** approach — and in fact, it mirrors the *powerset domain* interpretation of abstract values like `{-, 0, +}`.
+
+   In your case, this would mean **mapping each `SignValue` to a `Set<AtomicSign>`**, and performing operations by **computing the cross-product** of the operand sets and applying concrete semantics to each pair.
+
+   ---
+
+   ## ✅ Why This Is a Good Approach
+
+   * ✅ **Extensible**: You don’t need to hardcode logic for each `SignValue` combination.
+   * ✅ **Declarative**: You define the semantics once (e.g. `(- +) → ?`), and sets take care of abstraction.
+   * ✅ **Reusable**: You can reuse the same semantics across `ADD`, `SUB`, `MUL`, etc.
+
+   ---
+
+   ## 🧱 Step-by-Step Plan
+
+   ---
+
+   ### 1. Define `AtomicSign`
+
+   ```java
+   public enum AtomicSign {
+     MINUS, ZERO, PLUS
+   }
+   ```
+
+   ---
+
+   ### 2. Map `SignValue` → Set<AtomicSign>
+
+   In your `SignValue` enum, add:
+
+   ```java
+   private final Set<AtomicSign> signs;
+
+   SignValue(String repr, Set<AtomicSign> signs) {
+     this.repr = repr;
+     this.signs = signs;
+   }
+
+   public Set<AtomicSign> getSigns() {
+     return signs;
+   }
+
+   public static SignValue fromSigns(Set<AtomicSign> signs) {
+     // Map the Set back to the correct SignValue
+     for (SignValue val : values()) {
+       if (val.signs.equals(signs)) {
+         return val;
+       }
+     }
+     return TOP; // default fallback
+   }
+   ```
+
+   Then initialize like this:
+
+   ```java
+   BOTTOM("⊥", Set.of()),
+   MINUS("{–}", Set.of(AtomicSign.MINUS)),
+   ZERO("{0}", Set.of(AtomicSign.ZERO)),
+   PLUS("{+}", Set.of(AtomicSign.PLUS)),
+   ZERO_MINUS("{0,–}", Set.of(AtomicSign.ZERO, AtomicSign.MINUS)),
+   ZERO_PLUS("{0,+}", Set.of(AtomicSign.ZERO, AtomicSign.PLUS)),
+   PLUS_MINUS("{+,–}", Set.of(AtomicSign.PLUS, AtomicSign.MINUS)),
+   TOP("⊤", Set.of(AtomicSign.MINUS, AtomicSign.ZERO, AtomicSign.PLUS)),
+   UNINITIALIZED_VALUE("∅", null); // null or empty depending on your use case
+   ```
+
+   ---
+
+   ### 3. Define Concrete Semantics for Operations
+
+   For example, for `ADD`:
+
+   ```java
+   public static Set<AtomicSign> evaluateAdd(AtomicSign a, AtomicSign b) {
+     return switch (a) {
+       case ZERO -> Set.of(b);
+       case PLUS -> switch (b) {
+         case PLUS, ZERO -> Set.of(AtomicSign.PLUS);
+         case MINUS -> Set.of(AtomicSign.PLUS, AtomicSign.ZERO, AtomicSign.MINUS); // could be any
+       };
+       case MINUS -> switch (b) {
+         case MINUS, ZERO -> Set.of(AtomicSign.MINUS);
+         case PLUS -> Set.of(AtomicSign.PLUS, AtomicSign.ZERO, AtomicSign.MINUS); // could be any
+       };
+     };
+   }
+   ```
+
+   ---
+
+   ### 4. In `evaluate()` Combine Abstract Sets
+
+   ```java
+   public SignValue evaluate(Operation op, SignValue lhs, SignValue rhs) {
+     if (lhs == SignValue.BOTTOM || rhs == SignValue.BOTTOM) {
+       return SignValue.BOTTOM;
+     }
+
+     if (lhs == SignValue.UNINITIALIZED_VALUE || rhs == SignValue.UNINITIALIZED_VALUE) {
+       return SignValue.UNINITIALIZED_VALUE;
+     }
+
+     Set<AtomicSign> resultSet = new HashSet<>();
+
+     for (AtomicSign a : lhs.getSigns()) {
+       for (AtomicSign b : rhs.getSigns()) {
+         Set<AtomicSign> partialResult = switch (op) {
+           case ADD -> evaluateAdd(a, b);
+           case SUB -> evaluateSub(a, b);
+           case MUL -> evaluateMul(a, b);
+           case DIV -> evaluateDiv(a, b);
+           default -> throw new IllegalStateException("Unexpected op: " + op);
+         };
+         resultSet.addAll(partialResult);
+       }
+     }
+
+     return SignValue.fromSigns(resultSet);
+   }
+   ```
+
+   ---
+
+   ## ✅ Benefits of This Set-Based Approach
+
+   | Feature                   | Set-Based | Lookup Table | Manual Ifs |
+   | ------------------------- | --------- | ------------ | ---------- |
+   | Extensible                | ✅         | ❌ tedious    | ❌ verbose  |
+   | Easy to test/debug        | ✅         | ✅            | ❌          |
+   | Reusable operation logic  | ✅         | ❌            | ❌          |
+   | Precise semantic modeling | ✅         | ✅            | ❌          |
+
+   ---
+
+   ## 🚀 Bonus
+
+   If you ever want to **support widening, narrowing, or join** operations in your lattice (like in abstract interpretation), this set-based model maps **directly to lattice joins** (e.g., union of sets)!
+
+   ---
+
+   Would you like me to generate all `evaluate*` methods (ADD, SUB, MUL, DIV) for you based on this atomic model?
+
+

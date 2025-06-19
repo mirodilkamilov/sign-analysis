@@ -9,20 +9,26 @@ import java.util.Set;
 public enum SignValue implements Value {
   // Important! This implementation is kind of fragile. Don't change the order of enum values!
   // Otherwise, code will break 🤡:)
-  BOTTOM("⊥"), // 0
-  MINUS("{–}"), // 1
-  ZERO("{0}"), // 2
-  ZERO_MINUS("{0,–}"), // 3 == ZERO | MINUS
-  PLUS("{+}"), // 4 == 4
-  PLUS_MINUS("{+,–}"), // 5 == PLUS | MINUS
-  ZERO_PLUS("{0,+}"), // 6 == ZERO | PLUS
-  TOP("⊤"), // 7 == MINUS | ZERO | PLUS
-  UNINITIALIZED_VALUE("∅"); // 8
+  BOTTOM("⊥", Set.of()), // 0
+  MINUS("{–}", Set.of(Sign.MINUS)), // 1
+  ZERO("{0}", Set.of(Sign.ZERO)), // 2
+  ZERO_MINUS("{0,–}", Set.of(Sign.ZERO, Sign.MINUS)), // 3 == ZERO | MINUS
+  PLUS("{+}", Set.of(Sign.PLUS)), // 4 == 4
+  PLUS_MINUS("{+,–}", Set.of(Sign.PLUS, Sign.MINUS)), // 5 == PLUS | MINUS
+  ZERO_PLUS("{0,+}", Set.of(Sign.ZERO, Sign.PLUS)), // 6 == ZERO | PLUS
+  TOP("⊤", Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS)), // 7 == MINUS | ZERO | PLUS
+  UNINITIALIZED_VALUE("∅", null); // 8
 
   private final String repr;
+  private final Set<Sign> signs;
 
-  SignValue(final String pRepr) {
+  SignValue(final String pRepr, Set<Sign> signs) {
     repr = pRepr;
+    this.signs = signs;
+  }
+
+  public Set<Sign> getSigns() {
+    return signs;
   }
 
   @Override
@@ -77,30 +83,13 @@ public enum SignValue implements Value {
     return pValue == SignValue.MINUS || pValue == ZERO_MINUS || pValue == PLUS_MINUS || pValue == TOP;
   }
 
-  public static Set<Sign> toSignSet(SignValue value) {
-    return switch (value) {
-      case BOTTOM -> throw new IllegalStateException("BOTTOM value not allowed");
-      case MINUS -> Set.of(Sign.MINUS);
-      case ZERO -> Set.of(Sign.ZERO);
-      case ZERO_MINUS -> Set.of(Sign.ZERO, Sign.MINUS);
-      case PLUS -> Set.of(Sign.PLUS);
-      case PLUS_MINUS -> Set.of(Sign.PLUS, Sign.MINUS);
-      case ZERO_PLUS -> Set.of(Sign.ZERO, Sign.PLUS);
-      case TOP -> Set.of(Sign.PLUS, Sign.MINUS, Sign.ZERO);
-      case UNINITIALIZED_VALUE -> throw new IllegalStateException("Uninitialized value not allowed.");
-    };
-  }
-
-  public static SignValue fromSignSet(Set<Sign> signs) {
-    if (signs.isEmpty()) return SignValue.BOTTOM;
-    if (signs.equals(Set.of(Sign.MINUS))) return SignValue.MINUS;
-    if (signs.equals(Set.of(Sign.ZERO))) return SignValue.ZERO;
-    if (signs.equals(Set.of(Sign.ZERO, Sign.MINUS))) return SignValue.ZERO_MINUS;
-    if (signs.equals(Set.of(Sign.PLUS))) return SignValue.PLUS;
-    if (signs.equals(Set.of(Sign.PLUS, Sign.MINUS))) return SignValue.PLUS_MINUS;
-    if (signs.equals(Set.of(Sign.ZERO, Sign.PLUS))) return SignValue.ZERO_PLUS;
-    if (signs.containsAll(Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS))) return SignValue.TOP;
-    if (signs.equals(Set.of(Sign.TOP))) return SignValue.TOP;
-    throw new IllegalStateException("Unknown sign set: " + signs);
+  public static SignValue fromSigns(Set<Sign> signs) {
+    // Map the Set back to the correct SignValue
+    for (SignValue val : values()) {
+      if (val.signs.equals(signs)) {
+        return val;
+      }
+    }
+    return TOP;
   }
 }

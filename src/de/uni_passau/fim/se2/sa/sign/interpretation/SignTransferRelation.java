@@ -3,6 +3,9 @@ package de.uni_passau.fim.se2.sa.sign.interpretation;
 import com.google.common.base.Preconditions;
 import org.objectweb.asm.Opcodes;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class SignTransferRelation implements TransferRelation {
 
   @Override
@@ -63,10 +66,25 @@ public class SignTransferRelation implements TransferRelation {
     Preconditions.checkNotNull(pLHS);
     Preconditions.checkNotNull(pRHS);
 
-    return switch (pOperation) {
-      case ADD -> Sign.evaluateAdd(pLHS, pRHS);
-      default -> throw new RuntimeException("Rest not implemented yet");
-    };
+    if (pLHS == SignValue.BOTTOM || pRHS == SignValue.BOTTOM) {
+      return SignValue.BOTTOM;
+    }
+    if (pLHS == SignValue.UNINITIALIZED_VALUE || pRHS == SignValue.UNINITIALIZED_VALUE) {
+      return SignValue.TOP;
+    }
+
+    Set<Sign> resultSet = new HashSet<>();
+    for (Sign lSign : pLHS.getSigns()){
+      for (Sign rSign : pRHS.getSigns()){
+        Set<Sign> partialResult = switch (pOperation) {
+          case ADD -> Sign.evaluateAdd(lSign, rSign);
+          default -> throw new RuntimeException("Rest not implemented yet");
+        };
+        resultSet.addAll(partialResult);
+      }
+    }
+
+    return SignValue.fromSigns(resultSet);
   }
 
   public static Operation getOperationFromOpcode(int opcode) {
