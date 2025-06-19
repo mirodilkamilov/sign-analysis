@@ -50,18 +50,18 @@ public enum Sign {
   public static Set<Sign> evaluateDiv(Sign lhs, Sign rhs) {
     return switch (lhs) {
       case MINUS -> switch (rhs) {
-        case MINUS -> Set.of(Sign.PLUS);
+        case MINUS -> Set.of(Sign.ZERO, Sign.PLUS);
         case ZERO -> Set.of();
-        case PLUS -> Set.of(Sign.MINUS);
+        case PLUS -> Set.of(Sign.ZERO, Sign.MINUS);
       };
       case ZERO -> switch (rhs) {
         case MINUS, PLUS -> Set.of(Sign.ZERO);
         case ZERO -> Set.of();
       };
       case PLUS -> switch (rhs) {
-        case MINUS -> Set.of(Sign.MINUS);
+        case MINUS -> Set.of(Sign.ZERO, Sign.MINUS);
         case ZERO -> Set.of();
-        case PLUS -> Set.of(Sign.PLUS);
+        case PLUS -> Set.of(Sign.ZERO, Sign.PLUS);
       };
     };
   }
