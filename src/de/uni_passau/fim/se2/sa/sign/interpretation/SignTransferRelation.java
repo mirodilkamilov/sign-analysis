@@ -70,7 +70,18 @@ public class SignTransferRelation implements TransferRelation {
       return SignValue.BOTTOM;
     }
     if (pLHS == SignValue.UNINITIALIZED_VALUE || pRHS == SignValue.UNINITIALIZED_VALUE) {
-      return SignValue.TOP;
+      if (pOperation == Operation.ADD || pOperation == Operation.SUB) {
+        return SignValue.TOP;
+      }
+      if (pOperation == Operation.MUL && (pLHS == SignValue.ZERO || pRHS == SignValue.ZERO)) {
+        return SignValue.ZERO;
+      }
+      if (pOperation == Operation.DIV && pLHS == SignValue.ZERO) {
+        return SignValue.ZERO;
+      }
+      if (pOperation == Operation.DIV && pRHS == SignValue.ZERO) {
+        return SignValue.BOTTOM;
+      }
     }
 
     Set<Sign> resultSet = new HashSet<>();
