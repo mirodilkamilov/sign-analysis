@@ -15,22 +15,53 @@ public enum Sign {
       };
       case ZERO -> Set.of(rhs);
       case PLUS -> switch (rhs) {
-        case ZERO, PLUS -> Set.of(Sign.PLUS);
         case MINUS -> Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS);
+        case ZERO, PLUS -> Set.of(Sign.PLUS);
       };
     };
   }
 
-  public static Set<Sign> evaluateSubtract(Sign lhs, Sign rhs) {
+  public static Set<Sign> evaluateSub(Sign lhs, Sign rhs) {
     return switch (lhs) {
       case MINUS -> switch (rhs) {
-        case PLUS, ZERO -> Set.of(Sign.MINUS);
         case MINUS -> Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS);
+        case PLUS, ZERO -> Set.of(Sign.MINUS);
       };
       case ZERO -> Set.of(negateSign(rhs));
       case PLUS -> switch (rhs) {
         case ZERO, MINUS -> Set.of(Sign.PLUS);
         case PLUS -> Set.of(Sign.MINUS, Sign.ZERO, Sign.PLUS);
+      };
+    };
+  }
+
+  public static Set<Sign> evaluateMul(Sign lhs, Sign rhs) {
+    return switch (lhs) {
+      case MINUS -> Set.of(negateSign(rhs));
+      case ZERO -> Set.of(Sign.ZERO);
+      case PLUS -> switch (rhs) {
+        case MINUS -> Set.of(Sign.MINUS);
+        case ZERO -> Set.of(Sign.ZERO);
+        case PLUS -> Set.of(Sign.PLUS);
+      };
+    };
+  }
+
+  public static Set<Sign> evaluateDiv(Sign lhs, Sign rhs) {
+    return switch (lhs) {
+      case MINUS -> switch (rhs) {
+        case MINUS -> Set.of(Sign.PLUS);
+        case ZERO -> Set.of();
+        case PLUS -> Set.of(Sign.MINUS);
+      };
+      case ZERO -> switch (rhs) {
+        case MINUS, PLUS -> Set.of(Sign.ZERO);
+        case ZERO -> Set.of();
+      };
+      case PLUS -> switch (rhs) {
+        case MINUS -> Set.of(Sign.MINUS);
+        case ZERO -> Set.of();
+        case PLUS -> Set.of(Sign.PLUS);
       };
     };
   }
