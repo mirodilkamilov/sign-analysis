@@ -5,6 +5,7 @@ import com.google.common.collect.TreeMultimap;
 import de.uni_passau.fim.se2.sa.sign.interpretation.SignInterpreter;
 import de.uni_passau.fim.se2.sa.sign.interpretation.SignValue;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LineNumberNode;
@@ -122,26 +123,50 @@ public class SignAnalysisImpl implements SignAnalysis {
   }
 
   private boolean isDivByZero(final AbstractInsnNode pInstruction, final Frame<SignValue> pFrame) {
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    int opcode = pInstruction.getOpcode();
+    if (opcode != Opcodes.IDIV) {
+      return false;
+    }
+
+    int stackSize = pFrame.getStackSize();
+    SignValue pRHS = pFrame.getStack(stackSize - 1);
+    return SignValue.isZero(pRHS);
   }
 
   private boolean isMaybeDivByZero(
       final AbstractInsnNode pInstruction, final Frame<SignValue> pFrame) {
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    int opcode = pInstruction.getOpcode();
+    if (opcode != Opcodes.IDIV) {
+      return false;
+    }
+
+    int stackSize = pFrame.getStackSize();
+    SignValue pRHS = pFrame.getStack(stackSize - 1);
+    return SignValue.isMaybeZero(pRHS);
   }
 
   private boolean isNegativeArrayIndex(
       final AbstractInsnNode pInstruction, final Frame<SignValue> pFrame) {
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    int opcode = pInstruction.getOpcode();
+    if (opcode != Opcodes.IALOAD) {
+      return false;
+    }
+
+    int stackSize = pFrame.getStackSize();
+    SignValue pRHS = pFrame.getStack(stackSize - 1);
+    return SignValue.isNegative(pRHS);
   }
 
   private boolean isMaybeNegativeArrayIndex(
       final AbstractInsnNode pInstruction, final Frame<SignValue> pFrame) {
-    // TODO Implement me
-    throw new UnsupportedOperationException("Implement me");
+    int opcode = pInstruction.getOpcode();
+    if (opcode != Opcodes.IALOAD) {
+      return false;
+    }
+
+    int stackSize = pFrame.getStackSize();
+    SignValue pRHS = pFrame.getStack(stackSize - 1);
+    return SignValue.isMaybeNegative(pRHS);
   }
 
   private record Pair<K, V>(K key, V value) {
