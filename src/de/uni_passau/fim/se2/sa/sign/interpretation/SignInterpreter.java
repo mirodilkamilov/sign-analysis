@@ -44,6 +44,9 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   /** {@inheritDoc} */
   @Override
   public SignValue newValue(final Type pType) {
+    if (pType == Type.VOID_TYPE) {
+      return null;
+    }
     return SignValue.UNINITIALIZED_VALUE;
   }
 
