@@ -102,6 +102,13 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
       return new SignTransferRelation().evaluate(Operation.NEG, pValue);
     }
 
+    if (pInstruction instanceof IincInsnNode iinc) {
+      int increment = iinc.incr;
+      TransferRelation str = new SignTransferRelation();
+      SignValue pRHS = str.evaluate(increment);
+      return str.evaluate(Operation.ADD, pValue, pRHS);
+    }
+
     return pValue;
   }
 
