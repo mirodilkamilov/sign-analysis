@@ -13,9 +13,8 @@ import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +35,10 @@ public class SignAnalysisImpl implements SignAnalysis {
       classPath = classPath.replace(".", "/");
     }
     classPath += ".class";
-    File classFile = new File(classPath);
-    if (!classFile.isFile() || !classFile.exists()) {
-      throw new IllegalArgumentException("Invalid class name: Class file \"" + classPath + "\" doesn't exist.");
+
+    InputStream classStream = getClass().getClassLoader().getResourceAsStream(classPath);
+    if (classStream == null) {
+      throw new IllegalArgumentException("Invalid class name: Class file \"" + classPath + "\" not found on classpath.");
     }
 
     Pattern pattern = Pattern.compile("^(<\\w+>|\\w+):(\\([\\w/\\[\\];]*\\)[\\w/\\[\\];]+)$");
@@ -47,7 +47,7 @@ public class SignAnalysisImpl implements SignAnalysis {
       throw new IllegalArgumentException("Invalid method name: should be in name:descriptor format, e.g., addTwoIntegers:(II)I");
     }
 
-    byte[] classBytes = Files.readAllBytes(classFile.toPath());
+    byte[] classBytes = classStream.readAllBytes();
     ClassReader reader = new ClassReader(classBytes);
 
     ClassNode classNode = new ClassNode();

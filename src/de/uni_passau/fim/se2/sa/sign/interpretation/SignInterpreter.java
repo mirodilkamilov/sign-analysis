@@ -1,12 +1,11 @@
 package de.uni_passau.fim.se2.sa.sign.interpretation;
 
+import de.uni_passau.fim.se2.sa.sign.ContextAwareSignAnalyzer;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.IntInsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Interpreter;
 
 import java.util.List;
@@ -91,16 +90,28 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   @Override
   public SignValue unaryOperation(final AbstractInsnNode pInstruction, final SignValue pValue)
       throws AnalyzerException {
-    Operation operation = getOperationFromOpcode(pInstruction.getOpcode());
-    return new SignTransferRelation().evaluate(operation, pValue);
+    int opcode = pInstruction.getOpcode();
+    if (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) {
+      return pValue;
+    }
+
+    if (opcode == Opcodes.INEG) {
+      return new SignTransferRelation().evaluate(Operation.NEG, pValue);
+    }
+
+    return pValue;
   }
 
   /** {@inheritDoc} */
   @Override
   public SignValue binaryOperation(
       final AbstractInsnNode pInstruction, final SignValue pValue1, final SignValue pValue2) {
-    Operation operation = getOperationFromOpcode(pInstruction.getOpcode());
-    return new SignTransferRelation().evaluate(operation, pValue1, pValue2);
+    int opcode = pInstruction.getOpcode();
+    if (opcode == Opcodes.IADD || opcode == Opcodes.ISUB || opcode == Opcodes.IMUL || opcode == Opcodes.IDIV){
+      Operation operation = getOperationFromOpcode(pInstruction.getOpcode());
+      return new SignTransferRelation().evaluate(operation, pValue1, pValue2);
+    }
+    return SignValue.TOP;
   }
 
   /** {@inheritDoc} */
@@ -117,7 +128,48 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   @Override
   public SignValue naryOperation(
       final AbstractInsnNode pInstruction, final List<? extends SignValue> pValues) {
-    return pValues.getFirst(); // TODO: Implement
+    if (!(pInstruction instanceof MethodInsnNode methodInsn)) {
+      return SignValue.TOP;
+    }
+
+    String methodKey = methodInsn.name + ":" + methodInsn.desc;
+    MethodNode targetMethod = methods.get(methodKey);
+    if (targetMethod == null) {
+      return SignValue.TOP;
+    }
+
+    boolean isStatic = methodInsn.getOpcode() == Opcodes.INVOKESTATIC;
+
+    try {
+      SignInterpreter newInterpreter = new SignInterpreter(pClassName, methods);
+      ContextAwareSignAnalyzer analyzer = new ContextAwareSignAnalyzer(
+              newInterpreter,
+              pValues,
+              methodInsn.desc,
+              isStatic
+      );
+
+      Frame<SignValue>[] frames = analyzer.analyze(pClassName, targetMethod);
+      InsnList instructions = targetMethod.instructions;
+      SignValue result = SignValue.BOTTOM;
+
+      for (int i = 0; i < instructions.size(); i++) {
+        AbstractInsnNode insn = instructions.get(i);
+        int opcode = insn.getOpcode();
+
+        if (opcode == Opcodes.IRETURN) {
+          Frame<SignValue> frame = frames[i];
+          if (frame != null && frame.getStackSize() > 0) {
+            SignValue returnValue = frame.getStack(frame.getStackSize() - 1);
+            result = merge(result, returnValue);
+          }
+        }
+      }
+
+      return result;
+    } catch (AnalyzerException e) {
+      return SignValue.TOP;
+    }
   }
 
   /** {@inheritDoc} */
@@ -131,6 +183,15 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   @Override
   public SignValue merge(final SignValue pValue1, final SignValue pValue2) {
     if (pValue1 == pValue2)
+      return pValue1;
+    if (pValue1 == SignValue.BOTTOM)
+      return pValue2;
+    if (pValue2 == SignValue.BOTTOM)
+      return pValue1;
+
+    if (pValue1 == SignValue.UNINITIALIZED_VALUE)
+      return pValue2;
+    if (pValue2 == SignValue.UNINITIALIZED_VALUE)
       return pValue1;
     return pValue1.join(pValue2);
   }
