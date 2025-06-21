@@ -44,7 +44,8 @@ public class ContextAwareSignAnalyzer extends Analyzer<SignValue> {
     }
 
     for (Type ignored : args) {
-      frame.setLocal(localIndex, argumentSigns.get(localIndex));
+      // frame.setLocal(localIndex, argumentSigns.get(localIndex));
+      frame.setLocal(localIndex, SignValue.TOP); // don't set exact values of arguments
       localIndex++;
     }
   }
