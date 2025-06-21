@@ -85,6 +85,11 @@
       <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.assertj</groupId>
@@ -249,7 +254,10 @@
         <artifactId>pitest-maven</artifactId>
         <version>1.16.2</version>
         <configuration>
-          <outputFormats>XML</outputFormats>
+          <verbose>true</verbose>
+          <outputFormats>
+            <format>HTML</format>
+          </outputFormats>
           <targetClasses>
             <param>de.uni_passau.fim.se2.sa.sign.SignAnalysisImpl</param>
             <param>de.uni_passau.fim.se2.sa.sign.interpretation.*</param>
