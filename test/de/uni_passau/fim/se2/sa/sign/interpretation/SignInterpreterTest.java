@@ -3,7 +3,6 @@ package de.uni_passau.fim.se2.sa.sign.interpretation;
 import de.uni_passau.fim.se2.sa.sign.ContextAwareSignAnalyzer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
