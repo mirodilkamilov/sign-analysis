@@ -94,9 +94,9 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
   public SignValue unaryOperation(final AbstractInsnNode pInstruction, final SignValue pValue)
       throws AnalyzerException {
     int opcode = pInstruction.getOpcode();
-    if (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) {
-      return pValue;
-    }
+//    if (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) {
+//      return pValue;
+//    }
 
     if (opcode == Opcodes.INEG) {
       return new SignTransferRelation().evaluate(Operation.NEG, pValue);
@@ -152,7 +152,7 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
 
     try {
       SignInterpreter newInterpreter = new SignInterpreter(pClassName, methods);
-      ContextAwareSignAnalyzer analyzer = new ContextAwareSignAnalyzer(
+      ContextAwareSignAnalyzer analyzer = createAnalyzer(
               newInterpreter,
               pValues,
               methodInsn.desc,
@@ -180,6 +180,13 @@ public class SignInterpreter extends Interpreter<SignValue> implements Opcodes {
     } catch (AnalyzerException e) {
       return SignValue.TOP;
     }
+  }
+
+  protected ContextAwareSignAnalyzer createAnalyzer(SignInterpreter interpreter,
+                                                    List<? extends SignValue> values,
+                                                    String methodDesc,
+                                                    boolean isStatic) {
+    return new ContextAwareSignAnalyzer(interpreter, values, methodDesc, isStatic);
   }
 
   /** {@inheritDoc} */
